@@ -1,0 +1,14 @@
+{
+  "name": "exchange-price-consumer-service",
+  "version": "1.0.0",
+  "description": "This service connects with exchange and fetches quotes of stock.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ws": "^7.4.5"
+  }
+}
