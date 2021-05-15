@@ -1,0 +1,27 @@
+{
+  "name": "stock-price-feed-in-nodejs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/harshsavasil/stock-price-feed-in-nodejs.git"
+  },
+  "author": "Harsh Gupta",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/harshsavasil/stock-price-feed-in-nodejs/issues"
+  },
+  "homepage": "https://github.com/harshsavasil/stock-price-feed-in-nodejs#readme",
+  "dependencies": {
+    "q": "^1.5.1",
+    "redis": "^3.1.2",
+    "ws": "^7.4.5"
+  },
+  "devDependencies": {
+    "eslint": "^7.26.0"
+  }
+}
