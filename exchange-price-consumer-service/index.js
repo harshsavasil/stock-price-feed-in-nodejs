@@ -1,32 +1,33 @@
-const WebSocket = require('ws');
+const crypto = require('crypto');
 const Q = require('q');
+const WebSocket = require('ws');
 
-const config = require('./config');
+const config = require('../config');
 const Toolbox = require('../toolbox');
+Toolbox.init(config);
 
-const { Cache } = Toolbox;
+const { Cache, Utils } = Toolbox;
+const { finnhub, symbols } = config;
 
-const cacheInstance = new Cache({
-	host: config.redisCache.host,
-	port: config.redisCache.port,
-});
-const socket = new WebSocket('wss://ws.finnhub.io?token=c2fe6uaad3ien4445c20');
-const symbols = ['BINANCE:BTCUSDT', 'BINANCE:ETHUSDT'];
+const socket = new WebSocket(finnhub.uri);
 
-function publishNewpriceOnRedisChannel(newPrice) {
-	const channelName = `price_feed:${newPrice.symbol}`;
-	return cacheInstance.publish(channelName, newPrice);
-}
+const publishNewpriceOnRedisChannel = (newPrice) => {
+	const channelName = Utils.getChannelName(newPrice.symbol);
+	return Cache.publish(channelName, newPrice);
+};
 
-function parseMessage(message) {
+const parseMessage = (message) => {
 	try {
 		const jsonMessage = JSON.parse(message);
-		return jsonMessage.data;
+		if (jsonMessage.type === 'trade' && Array.isArray(jsonMessage.data)) {
+			return jsonMessage.data;
+		}
+		return [];
 	} catch(err) {
 		console.error(err, 'Invalid JSON Message From Exchange');
 		return [];
 	}
-}
+};
 
 socket.on('open', () => {
 	symbols.forEach((symbol) => {
@@ -35,12 +36,16 @@ socket.on('open', () => {
 });
 
 socket.on('message', (message) => {
+	const exchangePriceConsumerTimestamp = (new Date()).valueOf();
 	const recentTrades = parseMessage(message);
 	recentTrades
 		.map((recentTrade) => ({
+			id: crypto.randomBytes(16).toString('hex'),
 			symbol: recentTrade.s,
 			lastPrice: recentTrade.p,
-			timestamp: recentTrade.t,
+			originTimestamp: recentTrade.t,
+			exchangePriceConsumerTimestamp,
+			exchangePriceConsumerLatency: exchangePriceConsumerTimestamp - recentTrade.t,
 		}))
 		.reduce((promise, recentTrade) => promise.then(() => publishNewpriceOnRedisChannel(recentTrade)), Q());
 });
