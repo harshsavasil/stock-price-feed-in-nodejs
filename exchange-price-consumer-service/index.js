@@ -1,5 +1,4 @@
 const crypto = require('crypto');
-const Q = require('q');
 const WebSocket = require('ws');
 
 const config = require('../config');
@@ -7,47 +6,48 @@ const Toolbox = require('../toolbox');
 Toolbox.init(config);
 
 const { Cache, Utils } = Toolbox;
-const { finnhub, symbols } = config;
+const { binance } = config;
 
-const socket = new WebSocket(finnhub.uri);
+const socket = new WebSocket(`${binance.uri}/ws/stream`);
 
 const publishNewpriceOnRedisChannel = (newPrice) => {
 	const channelName = Utils.getChannelName(newPrice.symbol);
 	return Cache.publish(channelName, newPrice);
 };
 
-const parseMessage = (message) => {
+const isValidPriceTick = (message) => {
 	try {
 		const jsonMessage = JSON.parse(message);
-		if (jsonMessage.type === 'trade' && Array.isArray(jsonMessage.data)) {
-			return jsonMessage.data;
-		}
-		return [];
+		const eventType = jsonMessage.e;
+		return eventType === '24hrTicker';
 	} catch(err) {
 		console.error(err, 'Invalid JSON Message From Exchange');
-		return [];
+		return false;
 	}
 };
 
 socket.on('open', () => {
-	symbols.forEach((symbol) => {
-		socket.send(JSON.stringify({'type':'subscribe', 'symbol': symbol}));
-	});
+	socket.send(JSON.stringify({
+		method: 'SUBSCRIBE',
+		params: binance.symbols.map((symbol) => `${symbol}@ticker`),
+		id: 1
+	}));
 });
 
 socket.on('message', (message) => {
-	const exchangePriceConsumerTimestamp = (new Date()).valueOf();
-	const recentTrades = parseMessage(message);
-	recentTrades
-		.map((recentTrade) => ({
-			id: crypto.randomBytes(16).toString('hex'),
-			symbol: recentTrade.s,
-			lastPrice: recentTrade.p,
-			originTimestamp: recentTrade.t,
-			exchangePriceConsumerTimestamp,
-			exchangePriceConsumerLatency: exchangePriceConsumerTimestamp - recentTrade.t,
-		}))
-		.reduce((promise, recentTrade) => promise.then(() => publishNewpriceOnRedisChannel(recentTrade)), Q());
+	setImmediate(() => {
+		if (isValidPriceTick(message)) {
+			const priceTickReceieved = JSON.parse(message);
+			const priceTick = {
+				id: crypto.randomBytes(16).toString('hex'),
+				symbol: priceTickReceieved.s,
+				lastPrice: priceTickReceieved.c,
+				openTimestamp: priceTickReceieved.O,
+				closeTimestamp: priceTickReceieved.C,
+			};
+			return publishNewpriceOnRedisChannel(priceTick);
+		}
+	});
 });
 
 socket.on('error', (err) => {
@@ -55,7 +55,9 @@ socket.on('error', (err) => {
 });
 
 socket.on('close', () => {
-	symbols.forEach((symbol) => {
-		socket.send(JSON.stringify({'type':'unsubscribe','symbol': symbol}));
-	});
+	socket.send(JSON.stringify({
+		method: 'UNSUBSCRIBE',
+		params: binance.symbols.map((symbol) => `${symbol}@ticker`),
+		id: 1
+	}));
 });
