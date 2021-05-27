@@ -6,7 +6,7 @@ const config = require('../config');
 const Toolbox = require('../toolbox');
 Toolbox.init(config);
 
-const PriceSubscriber = require('./PriceSubscriber');
+const PriceSubscriber = require('./price-subscriber');
 const { symbols } = config;
 
 global.totalPricesServed = 0;

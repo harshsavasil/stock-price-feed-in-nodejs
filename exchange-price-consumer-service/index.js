@@ -19,7 +19,7 @@ const isValidPriceTick = (message) => {
 	try {
 		const jsonMessage = JSON.parse(message);
 		const eventType = jsonMessage.e;
-		return eventType === '24hrTicker';
+		return eventType === '24hrTicker' || eventType === '24hrMiniTicker';
 	} catch(err) {
 		console.error(err, 'Invalid JSON Message From Exchange');
 		return false;
@@ -29,7 +29,7 @@ const isValidPriceTick = (message) => {
 socket.on('open', () => {
 	socket.send(JSON.stringify({
 		method: 'SUBSCRIBE',
-		params: binance.symbols.map((symbol) => `${symbol}@ticker`),
+		params: binance.symbols.map((symbol) => `${symbol}@miniTicker`),
 		id: 1
 	}));
 });
@@ -38,13 +38,25 @@ socket.on('message', (message) => {
 	setImmediate(() => {
 		if (isValidPriceTick(message)) {
 			const priceTickReceieved = JSON.parse(message);
-			const priceTick = {
-				id: crypto.randomBytes(16).toString('hex'),
-				symbol: priceTickReceieved.s,
-				lastPrice: priceTickReceieved.c,
-				openTimestamp: priceTickReceieved.O,
-				closeTimestamp: priceTickReceieved.C,
-			};
+			let priceTick;
+			if (priceTickReceieved.e === '24hrTicker') {
+				priceTick = {
+					id: crypto.randomBytes(16).toString('hex'),
+					symbol: priceTickReceieved.s,
+					lastPrice: priceTickReceieved.c,
+					openTimestamp: priceTickReceieved.O,
+					closeTimestamp: priceTickReceieved.C,
+					rawPrice: priceTickReceieved,
+				};
+			} else if (priceTickReceieved.e === '24hrMiniTicker') {
+				priceTick = {
+					id: crypto.randomBytes(16).toString('hex'),
+					symbol: priceTickReceieved.s,
+					lastPrice: priceTickReceieved.c,
+					timestamp: new Date(priceTickReceieved.E),
+					rawPrice: priceTickReceieved,
+				};
+			}
 			return publishNewpriceOnRedisChannel(priceTick);
 		}
 	});

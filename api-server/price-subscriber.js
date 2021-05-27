@@ -17,21 +17,21 @@ class PriceSubscriber {
 	}
 
 	subscribe(req, res) {
-		const callback = (channel, message) => this.processMessage(req, res, message);
+		const callback = (channel, message) => this.processMessage(res, message);
 		this.redisSubscriber.on('message', callback);
-		this.logActiveListeners(req.logger, 'create');
+		this.logActiveListeners('create');
 
-		req.on('close', () => this.removeListener(req, callback, 'close'));
-		req.on('error', () => this.removeListener(req, callback, 'error'));
-		req.on('end', () => this.removeListener(req, callback, 'end'));
+		req.on('close', () => this.removeListener(callback, 'close'));
+		req.on('error', () => this.removeListener(callback, 'error'));
+		req.on('end', () => this.removeListener(callback, 'end'));
 	}
 
-	removeListener(req, callback, eventType) {
+	removeListener(callback, eventType) {
 		this.redisSubscriber.removeListener('message', callback);
-		this.logActiveListeners(req.logger, eventType);
+		this.logActiveListeners(eventType);
 	}
 
-	processMessage(req, res, messageStr) {
+	processMessage(res, messageStr) {
 		try {
 			global.totalPricesServed += 1;
 			const message = JSON.parse(messageStr);
@@ -49,7 +49,7 @@ class PriceSubscriber {
 		}
 	}
 
-	logActiveListeners(logger, eventType) {
+	logActiveListeners(eventType) {
 		const listenerStats = {
 			channel: this.channel,
 			count: this.redisSubscriber.listenerCount('message'),
