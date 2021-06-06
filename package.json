@@ -17,9 +17,11 @@
   },
   "homepage": "https://github.com/harshsavasil/stock-price-feed-in-nodejs#readme",
   "dependencies": {
+    "kafkajs": "^1.15.0",
     "lodash": "^4.17.21",
     "q": "^1.5.1",
     "redis": "^3.1.2",
+    "request": "^2.88.2",
     "ws": "^7.4.5"
   },
   "devDependencies": {

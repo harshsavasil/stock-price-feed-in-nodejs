@@ -7,7 +7,8 @@ const Toolbox = require('../toolbox');
 Toolbox.init(config);
 
 const PriceSubscriber = require('./price-subscriber');
-const { symbols } = config;
+const { binance } = config;
+const { symbols } = binance;
 
 global.totalPricesServed = 0;
 global.sumOfTotalAPIServerLatency = 0;

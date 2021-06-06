@@ -1,0 +1,51 @@
+2 * 24 * 7 = ~350 30 min
+4 * 24 = 96 (15 min) 1 day
+(1 hour) duration 1 week
+
+30 min -- [23, 343, 46, ]
+
+- Update MongoDB and Redis in Realtime
+
+Spread 
+--> Transaction Cost
+--> Margin
+--> Premium Adjustment
+Effective Spread = (Transaction Cost + Margin) / 2 for each side
+
+Existing Transaction Flow
+Raw Price -> add safety spreads on both sides -> Users transact on these prices
+Excluded Transaction Cost from Existing Spread and reduce the mid price?
+Use Exisiting Transaction Cost in Partner Spreads as Transaction Fee.
+Reduce Transaction Fee from Transaction Amount before allocating quantities/rupiah.
+
+
+
+Add new collection for price history for all crypto coins in MongoDB
+{
+    symbol, candle_size, o, h, l, c, start, end, created, updated
+}
+Changes in Existing Pricing APIs - Calculate, Graph,
+OHLC Sanpshotting Job to accomodate new collection structure
+Do we have to consider fees in our hedgin PNL or not?
+Add Alt Coins Coming Soon Card! (Generic New Incoming Features Solution for UI)
+
+
+TokoCrypto
+- Possible Error Scenarios in Placing Order API
+- Maintenance Handling
+- Feature Toggle for transactions and pricing
+- Ask them about failure to receive new prices?
+- Mini Ticker vs Ticker?
+
+
+ETH
+Zipmex
+BuyBack Price - 100
+Sell Price - 120
+Mid Price - 110
+
+Pluang (Margin - 10%)  (Effective Spread = ())
+BuyBack Price - 99
+Sell Price - 121
+Mid Price - 110
+

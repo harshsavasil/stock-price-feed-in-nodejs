@@ -5,6 +5,6 @@ module.exports = {
 	},
 	binance: {
 		uri: 'wss://stream.binance.com:9443',
-		symbols: ['btcusdt', 'ethusdt'],
+		symbols: ['dotusdt'],
 	},
 };

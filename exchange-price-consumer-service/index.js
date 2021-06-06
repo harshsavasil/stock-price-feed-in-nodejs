@@ -11,7 +11,7 @@ const { binance } = config;
 const socket = new WebSocket(`${binance.uri}/ws/stream`);
 
 const publishNewpriceOnRedisChannel = (newPrice) => {
-	const channelName = Utils.getChannelName(newPrice.symbol);
+	const channelName = Utils.getChannelName(newPrice.symbol.toLowerCase());
 	return Cache.publish(channelName, newPrice);
 };
 
@@ -29,7 +29,7 @@ const isValidPriceTick = (message) => {
 socket.on('open', () => {
 	socket.send(JSON.stringify({
 		method: 'SUBSCRIBE',
-		params: binance.symbols.map((symbol) => `${symbol}@miniTicker`),
+		params: binance.symbols.map((symbol) => `${symbol}@ticker`),
 		id: 1
 	}));
 });
@@ -48,6 +48,7 @@ socket.on('message', (message) => {
 					closeTimestamp: priceTickReceieved.C,
 					rawPrice: priceTickReceieved,
 				};
+				console.log(priceTickReceieved, 'Ticker');
 			} else if (priceTickReceieved.e === '24hrMiniTicker') {
 				priceTick = {
 					id: crypto.randomBytes(16).toString('hex'),
@@ -56,11 +57,18 @@ socket.on('message', (message) => {
 					timestamp: new Date(priceTickReceieved.E),
 					rawPrice: priceTickReceieved,
 				};
+				console.log(priceTickReceieved, 'Mini Ticker');
 			}
 			return publishNewpriceOnRedisChannel(priceTick);
+		} else {
+			console.log(message);
 		}
 	});
 });
+
+// socket.on('ping', () => {
+// 	socket.pong(Buffer.from((new Date()).valueOf().toString()));
+// });
 
 socket.on('error', (err) => {
 	console.log(err);
@@ -72,4 +80,5 @@ socket.on('close', () => {
 		params: binance.symbols.map((symbol) => `${symbol}@ticker`),
 		id: 1
 	}));
+	process.exit(1);
 });
